@@ -33,18 +33,18 @@ let globalCharacters = [
 let globalScenarios = [
   { 
     id: 's1', 
-    name: 'Konoha High', 
+    name: 'Путешествие в будущее', 
     author: '@system',
-    desc: 'Школа ниндзя в современном мире', 
-    avatar: 'https://i.pravatar.cc/300?u=s1', 
-    prompt: 'Действие происходит в современной школе ниндзя в Конохе. Персонажи — ученики или учителя.' 
+    desc: 'Вы попали в будущее', 
+    avatar: 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcT3xne14wZ5HKmQi_OsZVX-WfXM1W0fOme1fA&s', 
+    prompt: 'Вы попали в будущее, вокруг всё новое и неизведанное, сейчас 3026 год' 
   },
   { 
     id: 's2', 
-    name: 'Zombie Survival', 
+    name: 'Зомби апокалипсис', 
     author: '@system',
     desc: 'Мир после апокалипсиса', 
-    avatar: 'https://i.pravatar.cc/300?u=s2', 
+    avatar: 'https://vkurse.ua/wp-content/uploads/2025/04/koly-bude-zombi-apokalipsys.jpg', 
     prompt: 'Вокруг зомби-апокалипсис. Ресурсов мало, повсюду опасность.' 
   }
 ];
@@ -156,5 +156,6 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
 
