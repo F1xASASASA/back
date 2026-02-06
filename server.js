@@ -17,7 +17,7 @@ let globalCharacters = [
     name: 'Elon Musk', 
     author: '@system', 
     desc: 'Визионер, Марс, Tesla', 
-    avatar: 'https://i.imgur.com/8N88PNC.png', 
+    avatar: 'https://nonews.co/wp-content/uploads/2022/05/elon-musk-portrait.jpg', 
     prompt: 'Ты Илон Маск. Говори про космос, мемы и технологии.' 
   },
   { 
@@ -156,4 +156,5 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Сервер запущен на порту ${PORT}`);
 });
+
 
