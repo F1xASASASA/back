@@ -1,47 +1,81 @@
-// server.js
-require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const axios = require('axios');
+require('dotenv').config();
 
 const app = express();
-app.use(cors()); // Чтобы ВК разрешил запросы к твоему серверу
+app.use(cors());
 app.use(express.json());
 
-const PORT = process.env.PORT || 3000;
+// --- "БАЗА ДАННЫХ" (в реальности лучше использовать MongoDB) ---
+let usersData = {
+  // Структура: [userId]: { characters: [], histories: { [charId]: [] } }
+};
+
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
+// Хелпер для получения данных пользователя
+const getUser = (userId) => {
+  if (!usersData[userId]) {
+    usersData[userId] = { characters: [], histories: {} };
+  }
+  return usersData[userId];
+};
+
+// 1. Получить всех персонажей (общие + личные)
+app.get('/api/characters', (req, res) => {
+  const userId = req.query.userId;
+  const user = getUser(userId);
+  res.json({ userCharacters: user.characters });
+});
+
+// 2. Сохранить нового персонажа
+app.post('/api/characters', (req, res) => {
+  const { userId, character } = req.body;
+  const user = getUser(userId);
+  user.characters.push(character);
+  res.json({ success: true });
+});
+
+// 3. Получить историю чата
+app.get('/api/history', (req, res) => {
+  const { userId, charId } = req.query;
+  const user = getUser(userId);
+  res.json(user.histories[charId] || []);
+});
+
+// 4. Основной чат с сохранением
 app.post('/api/chat', async (req, res) => {
-    try {
-        const { messages, model } = req.body;
+  const { userId, charId, messages, model, systemPrompt } = req.body;
+  const user = getUser(userId);
 
-        const response = await axios({
-            method: 'post',
-            url: 'https://openrouter.ai/api/v1/chat/completions',
-            headers: {
-                'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-                'Content-Type': 'application/json',
-                'HTTP-Referer': 'https://vk.com', // Для статистики OpenRouter
-                'X-Title': 'Character AI VK',
-            },
-            data: {
-                model: model || "arcee-ai/trinity-large-preview:free",
-                messages: messages,
-                stream: true, // Включаем стриминг
-            },
-            responseType: 'stream' // Важно для проброса потока текста
-        });
+  // Сохраняем историю на сервере
+  user.histories[charId] = messages;
 
-        // Пробрасываем поток текста от OpenRouter напрямую клиенту
-        res.setHeader('Content-Type', 'text/event-stream');
-        response.data.pipe(res);
+  try {
+    const response = await axios({
+      method: 'post',
+      url: 'https://openrouter.ai/api/v1/chat/completions',
+      headers: {
+        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
+        'Content-Type': 'application/json',
+      },
+      data: {
+        model: model || "arcee-ai/trinity-large-preview:free",
+        messages: [{ role: 'system', content: systemPrompt }, ...messages],
+        stream: true,
+      },
+      responseType: 'stream'
+    });
 
-    } catch (error) {
-        console.error('Ошибка:', error.message);
-        res.status(500).json({ error: 'Ошибка сервера' });
-    }
+    res.setHeader('Content-Type', 'text/event-stream');
+    
+    // В реальном приложении нужно ловить конец стрима и записывать ответ бота в user.histories[charId]
+    response.data.pipe(res);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
 });
 
-app.listen(PORT, () => {
-    console.log(`Сервер запущен на порту ${PORT}`);
-});
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
