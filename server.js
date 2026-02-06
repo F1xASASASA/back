@@ -7,46 +7,40 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-// --- ГЛОБАЛЬНАЯ БАЗА ДАННЫХ ---
-const DEFAULT_DATA = [
-  { id: '1', name: 'Нептун', author: '@LEKCYXA', desc: 'Нептун и Уран>', avatar: 'https://i.pravatar.cc/150?u=1', prompt: 'Ты Нептун.' },
-  { id: '2', name: 'EKAANSH', author: '@chiku_X8', desc: 'REPLACE GROOM', avatar: 'https://i.pravatar.cc/150?u=2', prompt: 'You are Ekaansh.' }
+// Глобальный список (общий для всех)
+let globalCharacters = [
+  { id: '1', name: 'Нептун', author: '@LEKCYXA', desc: 'Нептун и Уран>', avatar: 'https://i.imgur.com/8N88PNC.png', prompt: 'Ты Нептун.' },
+  { id: '2', name: 'EKAANSH', author: '@chiku_X8', desc: 'REPLACE GROOM', avatar: 'https://i.imgur.com/3p8WnID.png', prompt: 'You are Ekaansh.' }
 ];
 
-// Все созданные персонажи теперь здесь
-let globalCharacters = [...DEFAULT_DATA];
-// Истории по-прежнему привязаны к пользователям
+// Истории (у каждого юзера своя)
 let userHistories = {}; 
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-// 1. Получить ВСЕХ персонажей для ВСЕХ
+// Получить всех персонажей
 app.get('/api/characters', (req, res) => {
   res.json(globalCharacters);
 });
 
-// 2. Создать персонажа (он добавится в общий список)
+// Создать персонажа (доступно всем)
 app.post('/api/characters', (req, res) => {
   const { character } = req.body;
-  // Проверяем, нет ли уже такого ID
-  if (!globalCharacters.find(c => c.id === character.id)) {
-    globalCharacters.push(character);
-  }
+  globalCharacters.push(character);
   res.json({ success: true, allCharacters: globalCharacters });
 });
 
-// 3. Получить историю (индивидуально для каждого юзера)
+// Получить историю
 app.get('/api/history', (req, res) => {
   const { userId, charId } = req.query;
   const key = `${userId}_${charId}`;
   res.json(userHistories[key] || []);
 });
 
-// 4. Чат
+// Чат
 app.post('/api/chat', async (req, res) => {
   const { userId, charId, messages, systemPrompt } = req.body;
   const key = `${userId}_${charId}`;
-  
   userHistories[key] = messages;
 
   try {
