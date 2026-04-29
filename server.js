@@ -5,12 +5,8 @@ require('dotenv').config();
 
 const app = express();
 
-// Разрешаем CORS, чтобы фронтенд (ВК/Локалхост) мог делать запросы
 app.use(cors());
 app.use(express.json());
-
-// --- ГЛОБАЛЬНЫЕ ДАННЫЕ (Хранятся в памяти сервера) ---
-// Примечание: На бесплатном Render данные сбросятся при перезагрузке сервера
 let globalCharacters = [
   { 
     id: 'elon_default', 
@@ -48,20 +44,17 @@ let globalScenarios = [
     prompt: 'Вокруг зомби-апокалипсис. Ресурсов мало, повсюду опасность.' 
   }
 ];
-
-// Хранилище историй: { "userId_chatId": [messages] }
 let userHistories = {};
 
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
 
-// --- API ЭНДПОИНТЫ ---
 
 // 1. Получить всех персонажей
 app.get('/api/characters', (req, res) => {
   res.json(globalCharacters);
 });
 
-// 2. Создать персонажа (доступно всем)
+// 2. Создать персонажа
 app.post('/api/characters', (req, res) => {
   const { character } = req.body;
   if (!character.name || !character.avatar.startsWith('https://')) {
@@ -76,7 +69,7 @@ app.get('/api/scenarios', (req, res) => {
   res.json(globalScenarios);
 });
 
-// 4. Создать сценарий (доступно всем)
+// 4. Создать сценарий
 app.post('/api/scenarios', (req, res) => {
   const { scenario } = req.body;
   if (!scenario.name || !scenario.avatar.startsWith('https://')) {
@@ -93,7 +86,7 @@ app.get('/api/history', (req, res) => {
   res.json(userHistories[key] || []);
 });
 
-// 6. Основной чат с нейросетью (Streaming)
+// 6. Основной чат с нейросетью
 app.post('/api/chat', async (req, res) => {
   const { userId, charId, messages, systemPrompt, model } = req.body;
   
@@ -122,11 +115,9 @@ app.post('/api/chat', async (req, res) => {
       responseType: 'stream'
     });
 
-    // Пробрасываем поток данных от OpenRouter к нашему фронтенду
     res.setHeader('Content-Type', 'text/event-stream');
     response.data.pipe(res);
 
-    // Логика захвата ответа для сохранения в историю (опционально)
     let fullResponse = "";
     response.data.on('data', (chunk) => {
         const lines = chunk.toString().split('\n');
@@ -141,7 +132,6 @@ app.post('/api/chat', async (req, res) => {
     });
 
     response.data.on('end', () => {
-        // Когда поток закончился, добавляем ответ бота в историю на сервере
         userHistories[key].push({ role: 'assistant', content: fullResponse });
     });
 
